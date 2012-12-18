@@ -1,6 +1,28 @@
 from bisect import insort_left
+import struct
+from threading import Lock
+import os
+from cherrycommon.timeutils import seconds
 
-__author__ = 'sunrize'
+
+_inc_lock = Lock()
+_inc = 0
+_pid = int(os.getpid()) % 0xffff
+def random_id():
+    """
+    Generate random id, based on timestamp, assumed to be unique for this process.
+    """
+    global _inc
+    _inc_lock.acquire()
+    i = '{}{}{}'.format(
+        struct.pack('>i', int(seconds())),
+        struct.pack('>H', _pid),
+        struct.pack('>H', _inc)
+    )
+    _inc = (_inc + 1) % 0xffff
+    _inc_lock.release()
+    return i.encode('hex')
+
 
 class Median(object):
     def __init__(self, *args):
