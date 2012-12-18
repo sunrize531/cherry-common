@@ -65,7 +65,6 @@ class ProcessInfo(object):
     def __repr__(self):
         return '<ProcessInfo: {}>'.format(self.id)
 
-
 class BasicProcess(object):
     _instance = None
     @classmethod
@@ -101,7 +100,7 @@ class BasicProcess(object):
         return self.info.process_index
 
     def start(self):
-        raise NotImplemented
+        pass
 
     def stop(self):
-        raise NotImplemented
+        pass
