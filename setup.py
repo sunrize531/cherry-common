@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(
-    name='cherry-forms',
+    name='cherry-common',
     version='0.1a',
     packages=['cherrycommon'],
     url='',

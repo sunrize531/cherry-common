@@ -1,6 +1,8 @@
+from logging import getLogger
 import os
 import zlib
 from cherrycommon.timeutils import milliseconds
+from zmq.eventloop.ioloop import IOLoop, install
 
 class ProcessException(Exception):
     def __init__(self, process, description):
@@ -75,13 +77,14 @@ class BasicProcess(object):
         return cls._instance
 
     def __init__(self, process_type, process_index=0, crc=None, log=True,
-                 ports=None, external_address=None, loop=None):
+                 ports=None, external_address=None):
         self.__class__._instance = self
         self.ports = ports or {}
         self.info = ProcessInfo(process_type, process_index=process_index, ports=self.ports,
             external_address=external_address, crc=crc)
         if not crc:
             self.info.init_crc()
+        self.logger = getLogger('process')
 
     @property
     def crc(self):
@@ -100,7 +103,26 @@ class BasicProcess(object):
         return self.info.process_index
 
     def start(self):
-        pass
+        self.logger.info('Process started: {!s}'.format(self.info))
+
 
     def stop(self):
-        pass
+        self.logger.info('Process stopped: {!s}'.format(self.info))
+
+class IOLoopProcess(BasicProcess):
+    def __init__(self, process_type, process_index=0, crc=None, log=True,
+        ports=None, external_address=None, loop=None):
+        super(IOLoopProcess, self).__init__(process_type, process_index, crc, log, ports, external_address)
+        if loop is None:
+            install()
+            self.loop = IOLoop.instance()
+        else:
+            self.loop = loop
+
+    def start(self):
+        super(IOLoopProcess, self).start()
+        self.loop.start()
+
+    def stop(self):
+        self.loop.stop()
+        super(IOLoopProcess, self).stop()
