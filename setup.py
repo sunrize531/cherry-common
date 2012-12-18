@@ -8,9 +8,10 @@ setup(
     license='MIT',
     author='WYSEGames',
     author_email='info@wysegames.com',
-    description='Set of UIModules for building forms with Tornado web server. Widgets also can be used as standalone on clientside.',
+    description='Set of various utilities used by cherry game engine.',
     install_requires=[
         "tornado >= 2.4",
-        "pymongo >= 2.3"
+        "pymongo >= 2.3",
+        "xlwt", "xlrd"
     ],
 )
