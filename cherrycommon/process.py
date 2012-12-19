@@ -115,16 +115,20 @@ class BasicProcess(object):
 
 class IOLoopProcess(BasicProcess):
     """
-    Run process with zmq eventloop.
+    Run process with zmq eventloop. Please, implement loop initialization in ther start method if you about to run this
+    process as daemon.
     """
     def __init__(self, process_type, process_index=0, crc=None, log=True,
         ports=None, external_address=None, loop=None):
         super(IOLoopProcess, self).__init__(process_type, process_index, crc, log, ports, external_address)
-        if loop is None:
+        self._loop = loop
+
+    @property
+    def loop(self):
+        if self._loop is None:
             install()
-            self.loop = IOLoop.instance()
-        else:
-            self.loop = loop
+            self._loop = IOLoop.instance()
+        return self._loop
 
     def start(self):
         super(IOLoopProcess, self).start()
@@ -133,115 +137,3 @@ class IOLoopProcess(BasicProcess):
     def stop(self):
         self.loop.stop()
         super(IOLoopProcess, self).stop()
-
-class DaemonMixin(object):
-    """
-    Mixin class for turning BasicProcess subclass into unix daemon. Based on Sander Marechal implementation.
-    """
-    pidfile = None
-    stdin = '/dev/null'
-    stdout = '/dev/null'
-    stderr = '/dev/null'
-
-    def daemonize(self):
-        """
-        do the UNIX double-fork magic, see Stevens' "Advanced
-        Programming in the UNIX Environment" for details (ISBN 0201563177)
-        http://www.erlenstar.demon.co.uk/unix/faq_2.html#SEC16
-        """
-        try:
-            pid = os.fork()
-            if pid > 0:
-                # exit first parent
-                sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("Fork failed: {} ({})\n".format(e.errno, e.strerror))
-            sys.exit(1)
-
-        # decouple from parent environment
-        os.chdir("/")
-        os.setsid()
-        os.umask(0)
-
-        # do second fork
-        try:
-            pid = os.fork()
-            if pid > 0:
-                # exit from second parent
-                sys.exit(0)
-        except OSError, e:
-            sys.stderr.write("Fork failed: {} ({})\n".format(e.errno, e.strerror))
-            sys.exit(1)
-
-        # redirect standard file descriptors
-        sys.stdout.flush()
-        sys.stderr.flush()
-        si = file(self.stdin, 'r')
-        so = file(self.stdout, 'a+')
-        se = file(self.stderr, 'a+', 0)
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
-
-        # write pidfile
-        atexit.register(self.delpid)
-        pid = str(os.getpid())
-        file(self.pidfile, 'w+').write("{}\n".format(pid))
-
-    def delpid(self):
-        os.remove(self.pidfile)
-
-    def start_daemon(self):
-        """
-        Start the daemon
-        """
-        # Check for a pidfile to see if the daemon already runs
-        try:
-            pf = file(self.pidfile, 'r')
-            pid = int(pf.read().strip())
-            pf.close()
-        except IOError:
-            pid = None
-
-        if pid:
-            message = "pidfile {} already exist. Daemon already running?\n"
-            sys.stderr.write(message.format(self.pidfile))
-            sys.exit(1)
-
-        # Start the daemon
-        self.daemonize()
-        self.start()
-
-    def stop_daemon(self):
-        """
-        Stop the daemon
-        """
-        # Get the pid from the pidfile
-        try:
-            pf = file(self.pidfile, 'r')
-        except IOError:
-            pid = None
-        else:
-            pid = int(pf.read().strip())
-            pf.close()
-
-        if not pid:
-            message = 'Pidfile {} does not exist. Daemon not running?\n'
-            sys.stderr.write(message.format(self.pidfile))
-            return # not an error in a restart
-
-        sys.stdout.write('Stopping daemon with pid {}'.format(pid))
-
-        # Try killing the daemon process
-        try:
-            while 1:
-                os.kill(pid, SIGTERM)
-                time.sleep(0.1)
-        except OSError, err:
-            err = str(err)
-            if err.find("No such process") > 0:
-                if os.path.exists(self.pidfile):
-                    os.remove(self.pidfile)
-            else:
-                print str(err)
-                sys.exit(1)

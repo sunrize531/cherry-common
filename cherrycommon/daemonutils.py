@@ -1,7 +1,10 @@
 from daemon import DaemonContext
 from daemon.pidfile import PIDLockFile
 from lockfile import LockFailed
+from lockfile.pidlockfile import read_pid_from_pidfile
 import sys
+import os
+import signal
 
 __author__ = 'sunrize'
 
@@ -20,5 +23,5 @@ def start_daemon(pidfile, process, **kwargs):
         process.start()
 
 def stop_daemon(pidfile):
-    context = DaemonContext(pidfile=PIDLockFile(pidfile))
-    context.close()
+    pid = read_pid_from_pidfile(pidfile)
+    os.kill(pid, signal.SIGTERM)
