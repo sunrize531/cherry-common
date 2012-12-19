@@ -12,6 +12,8 @@ setup(
     install_requires=[
         "tornado >= 2.4",
         "pymongo >= 2.3",
-        "xlwt", "xlrd"
+        "xlwt",
+        "xlrd",
+        "python-daemon"
     ],
 )
