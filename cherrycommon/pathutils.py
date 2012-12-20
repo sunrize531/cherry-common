@@ -16,3 +16,9 @@ def file_path(file_name, path):
                 return file_path
     raise OSError('File not found: {}'.format(file_name))
 
+def get_file_list(path, prefix='.'):
+    l = []
+    for root, sub, files in os.walk(prefix, path):
+        for file in files:
+            l.append(os.path.relpath(os.path.join(root, file), prefix))
+    return l
