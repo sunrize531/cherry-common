@@ -1,10 +1,6 @@
-import atexit
 from logging import getLogger
-from signal import SIGTERM
 import os
 import zlib
-import sys
-import time
 from cherrycommon.timeutils import milliseconds
 from zmq.eventloop.ioloop import IOLoop, install
 
