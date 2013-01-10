@@ -31,7 +31,7 @@ def milliseconds(value=None, utc=True, **kwargs):
     If value is datetime instance it will be converted to milliseconds since epoch (UTC). If value is number,
     it's assumed that it's in seconds, so it will be just multiplied to 1000.
     """
-    return long(_convert_time(value, utc) * 1000.0)
+    return long(_convert_time(value, utc, **kwargs) * 1000.0)
 
 def seconds(value=None, utc=True, **kwargs):
     """
@@ -42,7 +42,7 @@ def seconds(value=None, utc=True, **kwargs):
     if isinstance(value, (int, long, float)):
         return long(float(value) / 1000.0)
     else:
-        return _convert_time(value, utc)
+        return _convert_time(value, utc, **kwargs)
 
 def get_timeout(value=None, utc=False):
     """
