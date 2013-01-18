@@ -44,12 +44,14 @@ def seconds(value=None, utc=True, **kwargs):
     else:
         return _convert_time(value, utc, **kwargs)
 
-def get_timeout(value=None, utc=False):
+def get_timeout(value=None, utc=False, **kwargs):
     """
     Return local timestamp in seconds, for the time that come in value seconds.
     Value will be converted to seconds using seconds() function.
     """
-    if not isinstance(value, (int, long, float,)):
+    if value is None:
+        value = seconds(**kwargs)
+    elif not isinstance(value, (int, long, float,)):
         value = seconds(value)
     else:
         value = long(value)
