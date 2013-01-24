@@ -8,7 +8,7 @@ import signal
 
 __author__ = 'sunrize'
 
-def start_daemon(pidfile, process, **kwargs):
+def start_daemon(pidfile, process, stdout=None, stderr=None, **kwargs):
     if pidfile:
         pidfile = PIDLockFile(pidfile)
         try:
@@ -19,9 +19,12 @@ def start_daemon(pidfile, process, **kwargs):
     else:
         pidfile = None
 
-    with DaemonContext(pidfile=pidfile, stdout=sys.stdout, stderr=sys.stderr, **kwargs):
+    stdout = stdout or sys.stdout
+    stderr = stderr or sys.stderr
+    with DaemonContext(pidfile=pidfile, stdout=stdout, stderr=stderr, **kwargs):
         process.start()
 
 def stop_daemon(pidfile):
     pid = read_pid_from_pidfile(pidfile)
-    os.kill(pid, signal.SIGTERM)
+    os.kill(pid, signal.SIGKILL)
+    os.unlink(pidfile)
