@@ -1,4 +1,5 @@
 from logging import getLogger
+from threading import Thread
 import os
 import zlib
 from cherrycommon.timeutils import milliseconds
@@ -133,3 +134,14 @@ class IOLoopProcess(BasicProcess):
     def stop(self):
         self.loop.stop()
         super(IOLoopProcess, self).stop()
+
+
+class IOLoopThread(Thread):
+    _loop = None
+    @property
+    def loop(self):
+        if self._loop is None:
+            install()
+            # Hell yeah, one IOLoop instance per thread!
+            self._loop = IOLoop()
+        return self._loop
