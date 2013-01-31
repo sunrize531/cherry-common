@@ -67,7 +67,6 @@ def day(ts):
     """Floor provided timestamp (in milliseconds) to the start of the day.
 
     :param ts: timestamp in milliseconds.
-    :param utc: make time calculation in utc
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
     dt = datetime.utcfromtimestamp(ts / 1000)
@@ -77,10 +76,18 @@ def month(ts):
     """Floor provided timestamp to the start of the month.
 
     :param ts: timestamp in milliseconds.
-    :param utc: make time calculation in utc
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
     dt = datetime.utcfromtimestamp(ts / 1000)
     return milliseconds(datetime(dt.year, dt.month, 1))
+
+def next_month(ts):
+    """Ceil provided timestamp to the end of the month.
+
+    :param ts: timestamp in milliseconds.
+    :return: timestamp in milliseconds which corresponds the time when the next month begins.
+    """
+    dt = datetime.utcfromtimestamp(ts / 1000)
+    return milliseconds(datetime(dt.year, dt.month+1, 1))
 
 
