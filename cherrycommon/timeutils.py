@@ -63,31 +63,37 @@ def get_timeout(value=None, utc=False, **kwargs):
 DAY = milliseconds(days=1)
 HOUR = milliseconds(hours=1)
 
-def day(ts):
+def day(ts=None):
     """Floor provided timestamp (in milliseconds) to the start of the day.
 
     :param ts: timestamp in milliseconds.
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
+    ts = ts or milliseconds()
     dt = datetime.utcfromtimestamp(ts / 1000)
     return milliseconds(datetime(dt.year, dt.month, dt.day))
 
-def month(ts):
+def month(ts=None):
     """Floor provided timestamp to the start of the month.
 
     :param ts: timestamp in milliseconds.
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
+    ts = ts or milliseconds()
     dt = datetime.utcfromtimestamp(ts / 1000)
     return milliseconds(datetime(dt.year, dt.month, 1))
 
-def next_month(ts):
+def next_month(ts=None):
     """Ceil provided timestamp to the end of the month.
 
     :param ts: timestamp in milliseconds.
     :return: timestamp in milliseconds which corresponds the time when the next month begins.
     """
+    ts = ts or milliseconds()
     dt = datetime.utcfromtimestamp(ts / 1000)
-    return milliseconds(datetime(dt.year, dt.month+1, 1))
+    try:
+        return milliseconds(datetime(dt.year, dt.month+1, 1))
+    except ValueError:
+        return milliseconds(datetime(dt.year + 1, 1, 1))
 
 
