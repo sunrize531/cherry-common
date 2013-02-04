@@ -2,7 +2,7 @@ from bisect import insort_left
 import struct
 from threading import Lock
 import os
-from cherrycommon.timeutils import seconds
+from cherrycommon.timeutils import seconds, milliseconds
 
 
 _inc_lock = Lock()
@@ -14,8 +14,12 @@ def random_id():
     """
     global _inc
     _inc_lock.acquire()
+    ts = milliseconds()
+    s = ts / 1000
+    ds = ts / 100 - s * 10
     i = '{}{}{}'.format(
-        struct.pack('>i', int(seconds())),
+        struct.pack('>I', s),
+        struct.pack('>B', ds),
         struct.pack('>H', _pid),
         struct.pack('>H', _inc)
     )
