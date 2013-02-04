@@ -17,7 +17,7 @@ def random_id():
     ts = milliseconds()
     s = ts / 1000
     ds = ts / 100 - s * 10
-    i = '{}{}{}'.format(
+    i = '{}{}{}{}'.format(
         struct.pack('>I', s),
         struct.pack('>B', ds),
         struct.pack('>H', _pid),

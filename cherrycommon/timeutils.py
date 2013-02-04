@@ -70,7 +70,7 @@ def day(ts=None):
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
     ts = ts or milliseconds()
-    dt = datetime.utcfromtimestamp(ts / 1000)
+    dt = datetime.fromtimestamp(ts / 1000)
     return milliseconds(datetime(dt.year, dt.month, dt.day))
 
 def month(ts=None):
@@ -80,7 +80,7 @@ def month(ts=None):
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
     ts = ts or milliseconds()
-    dt = datetime.utcfromtimestamp(ts / 1000)
+    dt = datetime.fromtimestamp(ts / 1000)
     return milliseconds(datetime(dt.year, dt.month, 1))
 
 def next_month(ts=None):
@@ -90,7 +90,7 @@ def next_month(ts=None):
     :return: timestamp in milliseconds which corresponds the time when the next month begins.
     """
     ts = ts or milliseconds()
-    dt = datetime.utcfromtimestamp(ts / 1000)
+    dt = datetime.fromtimestamp(ts / 1000)
     try:
         return milliseconds(datetime(dt.year, dt.month+1, 1))
     except ValueError:

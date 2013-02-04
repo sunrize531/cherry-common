@@ -14,11 +14,14 @@ class TimeTest(unittest.TestCase):
         ts = milliseconds(datetime(2013, 1, 1, 23))
         day_start = milliseconds(datetime(2013, 1, 1))
         self.assertEqual(day_start, day(ts))
+        self.assertEqual(day_start, day(day_start))
+
 
     def test_month(self):
         ts = milliseconds(datetime(year=2013, month=1, day=2, hour=2))
         month_start = milliseconds(datetime(2013, 1, 1))
         self.assertEqual(month_start, month(ts))
+        self.assertEqual(month_start, month(month_start))
 
     def test_next_month(self):
         ts = milliseconds(datetime(year=2013, month=1, day=2, hour=2))
