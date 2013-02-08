@@ -1,12 +1,14 @@
 from datetime import timedelta, datetime, date
-from time import mktime, struct_time
+from time import strftime, gmtime, struct_time
+from calendar import timegm
+
 
 def _convert_time(value=None, utc=True, **kwargs):
     if isinstance(value, timedelta):
         return float(value.total_seconds())
 
     if isinstance(value, struct_time):
-        return mktime(value)
+        return gmtime(value)
 
     if isinstance(value, datetime):
         dt = value
@@ -24,7 +26,8 @@ def _convert_time(value=None, utc=True, **kwargs):
         ttuple = dt.utctimetuple()
     else:
         ttuple = dt.timetuple()
-    return mktime(ttuple) + float(dt.microsecond) / 1000000.0
+    return timegm(ttuple) + float(dt.microsecond) / 1000000.0
+
 
 def milliseconds(value=None, utc=True, **kwargs):
     """Converts value to milliseconds. If value is timedelta or struc_time, it will be just converted to milliseconds.
@@ -33,6 +36,7 @@ def milliseconds(value=None, utc=True, **kwargs):
     same as for timedelta function.
     """
     return long(_convert_time(value, utc, **kwargs) * 1000.0)
+
 
 def seconds(value=None, utc=True, **kwargs):
     """
@@ -45,6 +49,7 @@ def seconds(value=None, utc=True, **kwargs):
         return long(float(value) / 1000.0)
     else:
         return _convert_time(value, utc, **kwargs)
+
 
 def get_timeout(value=None, utc=False, **kwargs):
     """
@@ -63,6 +68,7 @@ def get_timeout(value=None, utc=False, **kwargs):
 DAY = milliseconds(days=1)
 HOUR = milliseconds(hours=1)
 
+
 def day(ts=None):
     """Floor provided timestamp (in milliseconds) to the start of the day.
 
@@ -70,8 +76,9 @@ def day(ts=None):
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
     ts = ts or milliseconds()
-    dt = datetime.fromtimestamp(ts / 1000)
-    return milliseconds(datetime(dt.year, dt.month, dt.day))
+    dt = gmtime(ts / 1000)
+    return milliseconds(datetime(dt.tm_year, dt.tm_mon, dt.tm_mday))
+
 
 def month(ts=None):
     """Floor provided timestamp to the start of the month.
@@ -80,8 +87,9 @@ def month(ts=None):
     :return: timestamp in milliseconds which corresponds the time when the day for provided timestamp started.
     """
     ts = ts or milliseconds()
-    dt = datetime.fromtimestamp(ts / 1000)
-    return milliseconds(datetime(dt.year, dt.month, 1))
+    dt = gmtime(ts / 1000)
+    return milliseconds(datetime(dt.tm_year, dt.tm_mon, 1))
+
 
 def next_month(ts=None):
     """Ceil provided timestamp to the end of the month.
@@ -90,12 +98,13 @@ def next_month(ts=None):
     :return: timestamp in milliseconds which corresponds the time when the next month begins.
     """
     ts = ts or milliseconds()
-    dt = datetime.fromtimestamp(ts / 1000)
+    dt = gmtime(ts / 1000)
     try:
-        return milliseconds(datetime(dt.year, dt.month+1, 1))
+        return milliseconds(datetime(dt.tm_year, dt.tm_mon + 1, 1))
     except ValueError:
-        return milliseconds(datetime(dt.year + 1, 1, 1))
+        return milliseconds(datetime(dt.tm_year + 1, 1, 1))
+
 
 def format_ts(pattern, ts=None):
     ts = ts or milliseconds()
-    return datetime.fromtimestamp(ts / 1000).strftime(pattern)
+    return strftime(pattern, gmtime(ts / 1000))
