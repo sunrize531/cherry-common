@@ -96,4 +96,6 @@ def next_month(ts=None):
     except ValueError:
         return milliseconds(datetime(dt.year + 1, 1, 1))
 
-
+def format_ts(pattern, ts=None):
+    ts = ts or milliseconds()
+    return datetime.fromtimestamp(ts / 1000).strftime(pattern)
