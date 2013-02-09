@@ -1,7 +1,7 @@
 from time import mktime, gmtime
 from calendar import timegm
 from datetime import timedelta, date, datetime
-from cherrycommon.timeutils import milliseconds, seconds, day, month, DAY, HOUR, next_month, format_ts
+from cherrycommon.timeutils import milliseconds, seconds, day, month, DAY, HOUR, next_month, format_ts, get_timeout
 
 __author__ = 'sunrize'
 
@@ -16,8 +16,13 @@ class TimeTest(unittest.TestCase):
     def test_datetime(self):
         dt = datetime(year=2013, month=1, day=1, hour=23)
         ts = milliseconds(dt)
-        print ts % DAY / HOUR
         self.assertEqual(ts % DAY, HOUR * 23)
+
+    def test_timeout(self):
+        now = seconds(utc=False)
+        timeout = get_timeout(seconds=5)
+        print timeout - now
+        self.assertAlmostEquals(now + 5, timeout, delta=1)
 
     def test_day(self):
         ts = milliseconds(datetime(2013, 1, 1, 23))
