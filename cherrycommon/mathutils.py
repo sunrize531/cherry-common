@@ -1,5 +1,6 @@
 from bisect import insort_left
-import struct, hashlib
+import struct
+import hashlib
 from threading import Lock
 import os
 from cherrycommon.timeutils import seconds, milliseconds
@@ -8,6 +9,8 @@ from cherrycommon.timeutils import seconds, milliseconds
 _inc_lock = Lock()
 _inc = 0
 _pid = int(os.getpid()) % 0xffff
+
+
 def random_id():
     """Generate id, based on timestamp, assumed to be unique for this process.
     """
@@ -17,6 +20,7 @@ def random_id():
         source = '{}{}{}'.format(ts, _pid, _inc)
         _inc += 1
     return hashlib.sha256(source).hexdigest()[0:18]
+
 
 def unique_id():
     """Generate random id, based on timestamp, assumed to be unique for this process.
@@ -28,7 +32,6 @@ def unique_id():
     s = ts / 1000
     ds = ts / 100 - s * 10
     with _inc_lock:
-        _inc_lock.acquire()
         source = '{}{}{}{}'.format(
             struct.pack('>I', s),
             struct.pack('>B', ds),
