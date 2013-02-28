@@ -1,4 +1,5 @@
 from logging import getLogger
+from multiprocessing import Process
 from threading import Thread
 import os
 import zlib
@@ -136,12 +137,22 @@ class IOLoopProcess(BasicProcess):
         super(IOLoopProcess, self).stop()
 
 
-class IOLoopThread(Thread):
+class IOLoopMixin():
+    """Add IOLoop getter to object. Use it if you need separate instance of zmq eventloop in subprocess or thread.
+    """
     _loop = None
+
     @property
     def loop(self):
         if self._loop is None:
             install()
-            # Hell yeah, one IOLoop instance per thread!
             self._loop = IOLoop()
         return self._loop
+
+
+class IOLoopThread(Thread, IOLoopMixin):
+    pass
+
+
+class IOLoopSubprocess(Process, IOLoopMixin):
+    pass
