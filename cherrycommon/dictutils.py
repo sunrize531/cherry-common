@@ -533,3 +533,53 @@ class Diffed(MappingView, MutableMapping):
     def dump_diff(self):
         return self._dump_diff(self._diffs[-1])
 
+
+JSON = 'json'
+AMF = 'amf'
+YAML = 'yaml'
+_supported_data_formats = {}
+
+
+def check_data_format(data_format=JSON):
+    try:
+        _module = _supported_data_formats[data_format]
+    except KeyError:
+        pass
+    else:
+        if _module:
+            return _module
+        else:
+            raise ImportError('Data format is not supported: {}'.format(data_format))
+
+    if data_format == JSON:
+        import json
+        _module = _supported_data_formats[JSON] = json
+    elif data_format == AMF:
+        try:
+            import cherrycommon._amf
+        except ImportError:
+            _supported_data_formats[AMF] = False
+            raise
+        else:
+            _module = _supported_data_formats[AMF] = cherrycommon._amf
+    elif data_format == YAML:
+        try:
+            import cherrycommon._yaml
+        except ImportError:
+            _supported_data_formats[YAML] = False
+            raise
+        else:
+            _module = _supported_data_formats[YAML] = cherrycommon._yaml
+    else:
+        raise NotImplementedError('Data format {} is not supported'.format(data_format))
+    return _module
+
+
+def encode_data(data, data_format=JSON):
+    _module = check_data_format(data_format)
+    return _module.dumps(data)
+
+
+def decode_data(data, data_format=JSON):
+    _module = check_data_format(data_format)
+    return _module.loads(data)
