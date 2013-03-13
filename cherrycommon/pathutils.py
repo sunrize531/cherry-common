@@ -1,5 +1,6 @@
 import os
 
+
 def norm_path(*args):
     """
     Returns normalized for current os, absolute path, joined by arguments.
@@ -7,6 +8,7 @@ def norm_path(*args):
     :return: joined, normalized, absolute path.
     """
     return os.path.abspath(os.path.normpath(os.path.join(*args)))
+
 
 def file_path(file_name, path):
     for p in path:
@@ -16,9 +18,10 @@ def file_path(file_name, path):
                 return file_path
     raise OSError('File not found: {}'.format(file_name))
 
+
 def get_file_list(path, prefix='.'):
     l = []
     for root, sub, files in os.walk(prefix, path):
-        for file in files:
-            l.append(os.path.relpath(os.path.join(root, file), prefix))
+        for f in files:
+            l.append(os.path.relpath(os.path.join(root, f), prefix))
     return l

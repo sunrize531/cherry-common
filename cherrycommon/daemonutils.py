@@ -8,6 +8,7 @@ import signal
 
 __author__ = 'sunrize'
 
+
 def start_daemon(pidfile, process, stdout=None, stderr=None, **kwargs):
     if pidfile:
         pidfile = PIDLockFile(pidfile)
@@ -23,6 +24,7 @@ def start_daemon(pidfile, process, stdout=None, stderr=None, **kwargs):
     stderr = stderr or sys.stderr
     with DaemonContext(pidfile=pidfile, stdout=stdout, stderr=stderr, **kwargs):
         process.start()
+
 
 def stop_daemon(pidfile):
     pid = read_pid_from_pidfile(pidfile)

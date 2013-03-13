@@ -2,6 +2,7 @@ from collections import Mapping, Sequence, MutableMapping
 import re
 from types import NoneType
 
+
 def dump_value(value):
     if hasattr(value, 'dump'):
         return value.dump()
@@ -12,10 +13,11 @@ def dump_value(value):
     elif isinstance(value, dict):
         #TODO: Raise an exception if key is empty string or None.
         return dict((key, dump_value(value)) for key, value in value.iteritems()
-            if key is not None or key!='')
+                    if key is not None or key != '')
     elif isinstance(value, int) and value > 0xffffffff:
         return long(value)
     return value
+
 
 def flatten_value(value):
     if isinstance(value, (dict, DictView)):
@@ -34,6 +36,7 @@ def flatten_value(value):
             return int_value
     return value
 
+
 def is_empty(value):
     if isinstance(value, dict):
         if not len(value):
@@ -44,6 +47,7 @@ def is_empty(value):
         return True
     else:
         return False
+
 
 def merge(target, source, keep_none=False, skip_empty=True):
     if source is None:
@@ -69,6 +73,7 @@ def merge(target, source, keep_none=False, skip_empty=True):
             target[key] = dump_value(source_value)
     return target
 
+
 def view_value(value):
     if isinstance(value, str):
         return unicode(value)
@@ -79,8 +84,11 @@ def view_value(value):
     else:
         return value
 
+
 _default = object()
 _field_pattern = re.compile('(([^\.\[\]]+)(\[(\d+)\])?)+')
+
+
 def split_field(field):
     match = _field_pattern.match(field)
     if not match:
@@ -89,6 +97,7 @@ def split_field(field):
     if index is not None:
         index = int(index)
     return full_match, nested_field, index
+
 
 def get_value(document, field, default=_default, flatten=True):
     """This function will try to get value from a document by the field name. Nested fields supported.
@@ -134,13 +143,14 @@ def get_value(document, field, default=_default, flatten=True):
             raise
 
     if full_match != field:
-        field = field[len(full_match)+1:]
+        field = field[len(full_match) + 1:]
         return get_value(value, field, default, flatten)
 
     if not flatten:
         return dump_value(value)
     else:
         return flatten_value(value)
+
 
 def set_value(document, field, value):
     if not isinstance(document, (dict, MutableMapping)):
@@ -171,8 +181,9 @@ def set_value(document, field, value):
                 nested_value = nested_value[index]
             else:
                 raise ValueError('Value should be list')
-        field = field[len(full_match)+1:]
+        field = field[len(full_match) + 1:]
         set_value(nested_value, field, value)
+
 
 def get_schema(documents, skip_nested=False, keep_none=False):
     if isinstance(documents, (dict, DictView)):
@@ -188,7 +199,7 @@ def get_schema(documents, skip_nested=False, keep_none=False):
             if not skip_nested:
                 schema.append(field)
             nested = sorted([
-                ('{}.{}'.format(field, nested_field), nested_value, level+1)
+                ('{}.{}'.format(field, nested_field), nested_value, level + 1)
                 for nested_field, nested_value in value.iteritems()
             ])
             for nested_tuple in nested:
@@ -223,6 +234,7 @@ class ListView(Sequence):
     def __unicode__(self):
         self.__str__()
 
+
 class MappingView(Mapping):
     def __init__(self, data=None):
         if data is None:
@@ -253,13 +265,14 @@ class MappingView(Mapping):
     def __unicode__(self):
         self.__str__()
 
-
     @staticmethod
     def view_value(value):
         return view_value(value)
 
+
 class DictView(MappingView):
     pass
+
 
 class BaseDiffed(MappingView, MutableMapping):
     pass
@@ -329,7 +342,6 @@ class Diffed(MappingView, MutableMapping):
         Returns the last applied diff, aka "effective"
         """
         return self.lookup().next()
-
 
     def __getitem__(self, item):
         if not self._diffs:
@@ -409,7 +421,6 @@ class Diffed(MappingView, MutableMapping):
                 return value is not None
         return False
 
-
     def keys(self):
         keys = set()
         lookup = list(self.lookup())
@@ -444,7 +455,8 @@ class Diffed(MappingView, MutableMapping):
     def add_diff(self, *diffs):
         for diff in diffs:
             if not isinstance(diff, (dict, DictView, NoneType)):
-                raise TypeError('Only dicts, DictViews and Nones accepted. Got {} - {}'.format(diff.__class__.__name__, diff))
+                raise TypeError(
+                    'Only dicts, DictViews and Nones accepted. Got {} - {}'.format(diff.__class__.__name__, diff))
             self._diffs.append(diff)
 
     def remove_diff(self, *diffs):
@@ -507,7 +519,6 @@ class Diffed(MappingView, MutableMapping):
             for value in values:
                 dump = merge(dump, value)
             return dump
-
 
     def dump(self):
         dump = {}

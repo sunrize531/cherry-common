@@ -7,6 +7,7 @@ DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 27017
 DEFAULT_DB_VERSION = 1
 
+
 class DataProvider(object):
     host = DEFAULT_HOST
     port = DEFAULT_PORT
@@ -25,6 +26,7 @@ class DataProvider(object):
         return db[collection_name]
 
     _global_cache = {}
+
     @classmethod
     def _get_cache(cls, db, collection):
         collection_id = '{collection}@{db}'.format(db=db, collection=collection)
@@ -33,6 +35,7 @@ class DataProvider(object):
         return cls._global_cache.setdefault(collection_id, {})
 
     _index_ttl = seconds(hours=1)
+
     def __init__(self, db, collection, use_cache=True, indexes=None):
         self._db_name = db
         self._collection_name = collection
@@ -127,7 +130,7 @@ class DataProvider(object):
         #TODO: used only in obsolete admin. Remove this method.
         res = {}
         for o in self.all(fields):
-            res[o["_id"]]=o
+            res[o["_id"]] = o
         return res
 
     def save(self, document, safe=False):
@@ -189,7 +192,7 @@ class Proxy(MappingView):
         super(Proxy, self).__init__(data)
 
     @classmethod
-    def find(cls,**kwargs):
+    def find(cls, **kwargs):
         return cls.get_data_provider().find(**kwargs)
 
     @classmethod
@@ -200,8 +203,9 @@ class Proxy(MappingView):
 
     @classmethod
     def get_document(cls, id):
-        document = cls.get_data_provider().get(
-            id, include_fields=cls.include_fields, exclude_fields=cls.exclude_fields)
+        document = cls.get_data_provider().get(id,
+                                               include_fields=cls.include_fields,
+                                               exclude_fields=cls.exclude_fields)
         if not document:
             raise KeyError('Document "{}" not found'.format(id))
         return cls.get_data_provider().get(id)
@@ -209,7 +213,7 @@ class Proxy(MappingView):
     @classmethod
     def all(cls):
         for data in cls.get_data_provider().find(
-            include_fields=cls.include_fields, exclude_fields=cls.exclude_fields):
+                include_fields=cls.include_fields, exclude_fields=cls.exclude_fields):
             yield cls(data=data)
 
     @classmethod
@@ -224,6 +228,7 @@ class Proxy(MappingView):
         return cls.ids()
 
     _dump = None
+
     def dump(self):
         fields = (set(self.dump_fields) or set(self)) - set(self.exclude_fields)
         return dict((field, dump_value(self[field])) for field in fields)
