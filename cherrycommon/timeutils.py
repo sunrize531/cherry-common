@@ -1,32 +1,53 @@
 from datetime import timedelta, datetime, date
-from time import strftime, gmtime, struct_time
+from time import strftime, gmtime, struct_time, time, mktime, localtime
 from calendar import timegm
 
 
-def _convert_time(value=None, utc=True, **kwargs):
-    if isinstance(value, timedelta):
-        return float(value.total_seconds())
-
-    if isinstance(value, struct_time):
-        return gmtime(value)
-
-    if isinstance(value, datetime):
-        dt = value
-    elif value is None:
-        if kwargs:
-            return float(timedelta(**kwargs).total_seconds())
-        if utc:
-            dt = datetime.utcnow()
+def _convert_utc_time(value=None):
+    mcs = 0
+    if value:
+        if isinstance(value, struct_time):
+            ttuple = gmtime(value)
+        elif isinstance(value, datetime):
+            if value.tzinfo and value.tzinfo.utcoffset(value):
+                ttuple = value.utctimetuple()
+            else:
+                ttuple = value.timetuple()
+            mcs = value.microsecond
         else:
-            dt = datetime.now()
+            raise TypeError('Cannot convert {}'.format(value.__class__))
     else:
-        raise TypeError('Cannot convert {}'.format(value.__class__))
+        now = datetime.utcnow()
+        ttuple = now.timetuple()
+        mcs = now.microsecond
+    return timegm(ttuple) + float(mcs) / 1000000.0
 
-    if utc and (dt.tzinfo and dt.tzinfo.utcoffset(dt)):
-        ttuple = dt.utctimetuple()
+
+def _convert_local_time(value=None):
+    mcs = 0
+    if value:
+        if isinstance(value, struct_time):
+            ttuple = localtime(value)
+        elif isinstance(value, datetime):
+            ttuple = value.timetuple()
+            mcs = value.microsecond
+        else:
+            raise TypeError('Cannot convert {}'.format(value.__class__))
     else:
-        ttuple = dt.timetuple()
-    return timegm(ttuple) + float(dt.microsecond) / 1000000.0
+        return time()
+    return mktime(ttuple) + float(mcs) / 1000000.0
+
+
+def _convert_time(value=None, utc=True, **kwargs):
+    if value and isinstance(value, timedelta):
+        return float(value.total_seconds())
+    elif not value and kwargs:
+        return float(timedelta(**kwargs).total_seconds())
+
+    if utc:
+        return _convert_utc_time(value)
+    else:
+        return _convert_local_time(value)
 
 
 def milliseconds(value=None, utc=True, **kwargs):

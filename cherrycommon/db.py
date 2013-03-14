@@ -178,16 +178,16 @@ class Proxy(MappingView):
     db = ''
     collection = ''
     use_cache = True
-    data_provider = None
     include_fields = ()
     exclude_fields = ()
     dump_fields = ()
 
     _all = []
+    _data_provider = None
 
-    def __init__(self, id=None, data=None):
-        if id is not None:
-            data = self.get_document(id)
+    def __init__(self, _id=None, data=None):
+        if _id is not None:
+            data = self.get_document(_id)
         data = data or {}
         super(Proxy, self).__init__(data)
 
@@ -197,18 +197,18 @@ class Proxy(MappingView):
 
     @classmethod
     def get_data_provider(cls):
-        if not cls.data_provider:
+        if not cls._data_provider:
             cls._data_provider = DataProvider(cls.db, cls.collection, cls.use_cache)
         return cls._data_provider
 
     @classmethod
-    def get_document(cls, id):
-        document = cls.get_data_provider().get(id,
+    def get_document(cls, _id):
+        document = cls.get_data_provider().get(_id,
                                                include_fields=cls.include_fields,
                                                exclude_fields=cls.exclude_fields)
         if not document:
-            raise KeyError('Document "{}" not found'.format(id))
-        return cls.get_data_provider().get(id)
+            raise KeyError('Document "{}" not found'.format(_id))
+        return cls.get_data_provider().get(_id)
 
     @classmethod
     def all(cls):
@@ -239,8 +239,8 @@ class Proxy(MappingView):
 
 
 class DiffedProxy(Proxy, MutableMapping):
-    def __init__(self, id=None, data=None, diffs=()):
-        super(DiffedProxy, self).__init__(id=id, data=data)
+    def __init__(self, _id=None, data=None, diffs=()):
+        super(DiffedProxy, self).__init__(_id=_id, data=data)
         self._data = Diffed(self._data)
         self.add_diff(*diffs)
 

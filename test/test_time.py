@@ -1,4 +1,4 @@
-from time import mktime, gmtime
+from time import mktime, gmtime, time
 from calendar import timegm
 from datetime import timedelta, date, datetime
 from cherrycommon.timeutils import milliseconds, seconds, day, month, DAY, HOUR, next_month, format_ts, get_timeout
@@ -61,6 +61,9 @@ class TimeTest(unittest.TestCase):
         print format_ts('%d.%m.%Y %H:%M %Z', mo)
         self.assertEqual(format_ts('%d.%m', mo), '01.01')
         self.assertEqual(format_ts('%d.%m %H:%M', mo), '01.01 00:00')
+
+    def test_local_time(self):
+        self.assertAlmostEqual(seconds(utc=False), time(), delta=100)
 
 
 if __name__ == '__main__':

@@ -21,17 +21,18 @@ class ProcessException(Exception):
 
 class ProcessInfo(object):
     def __init__(self, process_type='', process_index=0, machine_id=None,
-        ports=None, external_address=None, pid=None, crc=None):
+                 ports=None, sockets=None, external_address=None, pid=None, crc=None):
         self.process_type = process_type
         self.process_index = process_index
         self.machine_id = machine_id
         self.pid = pid or os.getpid()
         self.ports = ports or {}
+        self.sockets = sockets or {}
         self._crc = crc
         if external_address:
             self.external_address = external_address
 
-    _process_name_pattern = '{process_type}@{machine_id}.{index:02d}'
+    _process_name_pattern = '{process_type}@{machine_id}.{index:03d}'
 
     @classmethod
     def get_process_name(cls, process_type, machine_id, index):
@@ -77,25 +78,39 @@ class ProcessInfo(object):
     def __repr__(self):
         return '<ProcessInfo: {}>'.format(self.id)
 
+DEFAULT_MACHINE_ID = 'cherry'
+_process_instance = None
+
 
 class BasicProcess(object):
-    _instance = None
-
     @classmethod
     def get_instance(cls, *args, **kwargs):
-        if cls._instance is None:
-            instance = cls.__new__(cls)
-            instance.__init__(*args, **kwargs)
-        return cls._instance
+        global _process_instance
+        if _process_instance is None:
+            _process_instance = cls.__new__(cls)
+            _process_instance.__init__(*args, **kwargs)
+        return _process_instance
 
-    def __init__(self, process_type, process_index=0, crc=None, log=True,
-        ports=None, external_address=None):
-        self.__class__._instance = self
+    @classmethod
+    def _init_instance(cls, instance):
+        cls._instance = instance
+
+    def __init__(self, process_type, process_index=0, machine_id=DEFAULT_MACHINE_ID, crc=None, log=True,
+                 ports=None, sockets=None, external_address=None):
+        global _process_instance
+        _process_instance = self
         self.ports = ports or {}
-        self.info = ProcessInfo(process_type, process_index=process_index, ports=self.ports,
+        self.sockets = sockets or {}
+        self.info = ProcessInfo(process_type, process_index=process_index, machine_id=machine_id,
+                                ports=self.ports, sockets=self.sockets,
                                 external_address=external_address, crc=crc)
         if not crc:
             self.info.init_crc()
+
+        if log:
+            self.configure_logger()
+
+    def configure_logger(self):
         self.logger = getLogger('process')
 
     @property
@@ -117,7 +132,6 @@ class BasicProcess(object):
     def start(self):
         self.logger.info('Process started: {!s}'.format(self.info))
 
-
     def stop(self):
         self.logger.info('Process stopped: {!s}'.format(self.info))
 
@@ -128,9 +142,11 @@ class IOLoopProcess(BasicProcess):
     process as daemon.
     """
 
-    def __init__(self, process_type, process_index=0, crc=None, log=True,
-                 ports=None, external_address=None, loop=None):
-        super(IOLoopProcess, self).__init__(process_type, process_index, crc, log, ports, external_address)
+    def __init__(self, process_type, process_index=0, machine_id=DEFAULT_MACHINE_ID, crc=None, log=True,
+                 ports=None, sockets=None, external_address=None, loop=None):
+        super(IOLoopProcess, self).__init__(process_type, process_index=process_index, machine_id=machine_id,
+                                            crc=crc, log=log, ports=ports, sockets=sockets,
+                                            external_address=external_address)
         self._loop = loop
 
     @property
