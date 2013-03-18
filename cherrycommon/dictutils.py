@@ -185,7 +185,7 @@ def set_value(document, field, value):
         set_value(nested_value, field, value)
 
 
-def get_schema(documents, skip_nested=False, keep_none=False):
+def get_schema(documents, skip_nested=False, keep_none=False, nested_level=None):
     if isinstance(documents, (dict, DictView)):
         documents = [documents]
     documents_union = {}
@@ -198,12 +198,13 @@ def get_schema(documents, skip_nested=False, keep_none=False):
         if isinstance(value, dict):
             if not skip_nested:
                 schema.append(field)
-            nested = sorted([
-                ('{}.{}'.format(field, nested_field), nested_value, level + 1)
-                for nested_field, nested_value in value.iteritems()
-            ])
-            for nested_tuple in nested:
-                queue.insert(0, nested_tuple)
+            if nested_level is None or level < nested_level:
+                nested = sorted([
+                    ('{}.{}'.format(field, nested_field), nested_value, level + 1)
+                    for nested_field, nested_value in value.iteritems()
+                ])
+                for nested_tuple in nested:
+                    queue.insert(0, nested_tuple)
         else:
             schema.append(field)
     return schema

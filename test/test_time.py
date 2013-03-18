@@ -1,6 +1,5 @@
-from time import mktime, gmtime, time
-from calendar import timegm
-from datetime import timedelta, date, datetime
+from time import time
+from datetime import timedelta, datetime
 from cherrycommon.timeutils import milliseconds, seconds, day, month, DAY, HOUR, next_month, format_ts, get_timeout
 
 __author__ = 'sunrize'
