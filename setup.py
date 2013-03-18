@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='cherry-common',
-    version='0.2.6a',
+    version='0.3a',
     packages=['cherrycommon'],
     url='',
     license='MIT',
