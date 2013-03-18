@@ -1,6 +1,6 @@
 from json import dumps, loads
 from types import NoneType
-from common.data import flatten_value
+from cherrycommon.dictutils import flatten_value
 
 __author__ = 'sunrize'
 
@@ -17,12 +17,14 @@ CELL = 'cell'
 _CELL_FORMAT = 'font: name courier;'
 _HEADER_FORMAT = 'font: name courier; pattern: pattern solid, fore_color light_yellow; protection: cell_locked on;'
 
+
 def write_cell_value(value):
     value = flatten_value(value)
     if isinstance(value, (float, int, long, unicode, NoneType, Formula)):
         return value
     else:
         return dumps(value)
+
 
 def read_cell_value(value):
     if value == '':
@@ -46,9 +48,11 @@ def read_cell_value(value):
         else:
             return value
 
+
 class XLS(object):
     _base = 26
     _A = 65
+
     @classmethod
     def get_column_name(cls, n):
         n = int(n) + 1
@@ -76,7 +80,7 @@ class XLS(object):
 
     def get_sheet(self, name):
         try:
-            return filter(lambda sheet: sheet.name==name, self._sheets)[0]
+            return filter(lambda sheet: sheet.name == name, self._sheets)[0]
         except IndexError:
             raise KeyError('Sheet with name "{}" not found.'.format(name))
 
@@ -118,6 +122,7 @@ class Sheet(object):
         return len(self.rows)
 
     _styles = {}
+
     @classmethod
     def get_style(cls, style):
         try:
@@ -149,6 +154,7 @@ class Sheet(object):
 
         for num, width in col_widths.iteritems():
             ws.col(num).width = width * 256 * 1.2
+
 
 class Row(object):
     def __init__(self, cells, style=CELL):
