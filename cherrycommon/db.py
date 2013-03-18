@@ -164,10 +164,12 @@ class DataProvider(object):
             query = {'_id': query}
         self._collection.update(query, modify, safe=True, multi=multi, upsert=upsert)
 
-    def remove(self, pk=None):
-        if pk is not None:
-            self._collection.remove({"_id": pk})
-            self._drop_cache_entry(pk)
+    def remove(self, q=None):
+        if q is not None:
+            if isinstance(q, basestring):
+                self._drop_cache_entry(q)
+                q = {'_id': q}
+            self._collection.remove(q)
         else:
             self._collection.remove()
             if self.use_cache:
