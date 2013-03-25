@@ -194,8 +194,8 @@ class Proxy(MappingView):
         super(Proxy, self).__init__(data)
 
     @classmethod
-    def find(cls, **kwargs):
-        return cls.get_data_provider().find(**kwargs)
+    def find(cls,*args,**kwargs):
+        return cls.get_data_provider().find(*args,**kwargs)
 
     @classmethod
     def get_data_provider(cls):
