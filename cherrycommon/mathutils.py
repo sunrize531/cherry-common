@@ -1,4 +1,6 @@
 from bisect import insort_left
+from collections import MutableMapping, OrderedDict
+import random
 import struct
 import hashlib
 from threading import Lock
@@ -11,7 +13,7 @@ _inc = 0
 _pid = int(os.getpid()) % 0xffff
 
 
-def random_id():
+def random_id(length=18):
     """Generate id, based on timestamp, assumed to be unique for this process.
     """
     global _inc
@@ -19,7 +21,7 @@ def random_id():
     with _inc_lock:
         source = '{}{}{}'.format(ts, _pid, _inc)
         _inc += 1
-    return hashlib.sha256(source).hexdigest()[0:18]
+    return hashlib.sha256(source).hexdigest()[0:length]
 
 
 def unique_id():
@@ -88,7 +90,119 @@ class Median(object):
         return sum(self.values)
 
     def __repr__(self):
-        return '(min: {:.1f}, max: {:.1f}, med: {:.1f}, avg: {:.2f})'.format(self.min, self.max, self.med, self.avg)
+        return '<Median: (min: {:.1f}, max: {:.1f}, med: {:.1f}, avg: {:.2f})>'.format(
+            self.min, self.max, self.med, self.avg)
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class WeightedItem(object):
+    __slots__ = 'name', 'weight', 'toughness', 'hunger'
+
+    def __init__(self, name, weight=1):
+        self.name = name
+        self.weight = weight
+        self.toughness = 0
+        self.hunger = 0
+
+    def __repr__(self):
+        return '(weight: {}, toughness: {}, hunger: {})'.format(self.weight, self.toughness, self.hunger)
+
+    def __str__(self):
+        return self.__repr__()
+
+
+class Weights(MutableMapping):
+    def __init__(self, **kwargs):
+        self._items = {}
+        self._updated = True
+        self._total = 0
+        self._len = 0
+        self._first = None
+        self._last = None
+        self.update(kwargs)
+
+    def __getitem__(self, item):
+        return self._items[item].weight
+
+    def __setitem__(self, key, value):
+        if value >= 0:
+            try:
+                self._items[key].weight = value
+            except KeyError:
+                self._items[key] = WeightedItem(key, value)
+        else:
+            raise ValueError('Value should be positive or zero.')
+        self._updated = True
+
+    def __delitem__(self, key):
+        del self._items[key]
+        self._updated = True
+
+    def __len__(self):
+        return len(self._items)
+
+    def __contains__(self, item):
+        return self._items.__contains__(item)
+
+    def keys(self):
+        return self._items.keys()
+
+    def __iter__(self):
+        return iter(self.keys())
+
+    def _refresh_heights(self):
+        l = self._len = len(self._items)
+        if not l:
+            raise IndexError('Cannot choose from nothing.')
+
+        items = sorted(self._items.values(), key=lambda item: item.weight)
+        t = 0
+        for item in items:
+            t += item.weight
+            item.toughness = t
+        total = self._total = t
+
+        t = 0
+        c = l - 1
+        for item in items:
+            t += float(total - item.weight) / c
+            item.hunger = t
+
+        self._items = OrderedDict()
+        for item in items:
+            self._items[item.name] = item
+        self._first = items[0]
+
+    def roll(self):
+        return random.random() * self._total
+
+    def choice(self, thin=False):
+        if self._updated:
+            self._refresh_heights()
+            self._updated = False
+
+        if self._len < 2:
+            if self._first:
+                return self._first.name
+            else:
+                raise IndexError('Nothing to choose')
+
+        r = self.roll()
+        if not thin:
+            for item in self._items.itervalues():
+                if r < item.toughness:
+                    return item.name
+        else:
+            for item in self._items.itervalues():
+                if r < item.hunger:
+                    return item.name
+
+        raise IndexError('Nothing to choose')
+
+    def __repr__(self):
+        return '<Weights: {}>'.format(self._items)
 
     def __str__(self):
         return self.__repr__()

@@ -540,6 +540,12 @@ AMF = 'amf'
 YAML = 'yaml'
 _supported_data_formats = {}
 
+content_types = {
+    JSON: 'application/json',
+    AMF: 'application/x-amf',
+    YAML: 'application/yaml'
+}
+
 
 def check_data_format(data_format=JSON):
     try:
@@ -584,3 +590,8 @@ def encode_data(data, data_format=JSON):
 def decode_data(data, data_format=JSON):
     _module = check_data_format(data_format)
     return _module.loads(data)
+
+
+def get_content_type(data_format=JSON):
+    check_data_format(data_format)
+    return content_types[data_format]
