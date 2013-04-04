@@ -159,7 +159,10 @@ class DataHandler(RequestHandler):
 
     def get_request_data(self):
         if self._request_data is None:
-            self._request_data = self.decode_data(self.request.body)
+            try:
+                self._request_data = self.decode_data(self.request.body)
+            except (TypeError, ValueError):
+                self._request_data = {}
         return self._request_data
 
     _ARG_DEFAULT = []
@@ -237,7 +240,7 @@ class CollectionHandler(AbstractCollectionHandler):
                    use_cache=False, data_format=JSON):
         if db is None:
             try:
-                getattr(self, 'db')
+                db = getattr(self, 'db')
             except AttributeError:
                 raise AttributeError('Either set db name in handler arguments or set it as an attribute')
         else:
@@ -245,7 +248,7 @@ class CollectionHandler(AbstractCollectionHandler):
 
         if collection is None:
             try:
-                getattr(self, 'collection')
+                collection = getattr(self, 'collection')
             except AttributeError:
                 raise AttributeError('Either set collection name in handler arguments or set it as an attribute')
         else:
