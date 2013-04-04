@@ -1,8 +1,14 @@
+from copy import copy
+import imp
 from logging import getLogger
 from multiprocessing import Process
 from threading import Thread
 import os
+from types import ModuleType
 import zlib
+from cherrycommon.dictutils import decode_data, YAML, dump_value
+from cherrycommon.mathutils import random_id
+from cherrycommon.pathutils import norm_path
 from cherrycommon.timeutils import milliseconds
 from zmq.eventloop.ioloop import IOLoop, install
 
@@ -184,3 +190,138 @@ class IOLoopThread(Thread, IOLoopMixin):
 
 class IOLoopSubprocess(Process, IOLoopMixin):
     pass
+
+
+class Settings(object):
+    """Container to store and provide access for application settings.
+    """
+
+    properties = set()
+    required_properties = set()
+    private_properties = set()
+
+    def __init__(self, settings=None, properties=(), required_properties=(), **kwargs):
+        """
+        :param settings:            Object where look for properties. If properties attribute is set, than only listed
+                                    properties will be copied. You can provide dict or module as an argument.
+                                    If required_properties is set, and settings does not contains any of
+                                    listed properties, LookupError will be raised.
+        :type settings:             dict or module.
+        :param properties:          List of properties which should be copied to this container instance,
+                                    during initialization, import or update. Also you can define properties as
+                                    subclass' attribute.
+        :type properties:           list or tuple or set.
+        :param required_properties: List of properties which are required for this container instance. Also you can
+                                    define required_properties as subclass' attribute.
+        :type required_properties:  list or tuple or set.
+        :param kwargs:              Provide additional properties through kwargs.
+        """
+        self._settings = {}
+        if properties:
+            self.properties = set(properties)
+        if required_properties:
+            self.required_properties = set(required_properties)
+        if settings:
+            self.update(settings)
+
+    def __getattr__(self, item):
+        return self._settings[item]
+
+    def __getitem__(self, item):
+        return self._settings[item]
+
+    def parse_file(self, file_name):
+        """Load settings from json or yaml file.
+
+        :param file_name: path of the file to parse. path will be normalized, before loading.
+        :type file_name: basestring
+        :return:
+        """
+        with open(norm_path(file_name), 'rb') as f:
+            settings = f.read()
+        self.update(decode_data(settings, YAML))
+
+    def import_file(self, file_name):
+        """Load settings from python module.
+        """
+        settings = imp.load_source('_settings_importing', norm_path(file_name))
+        self.update(settings)
+
+    def filter_props(self, props):
+        props = set(props)
+        valid_props = self.properties | self.required_properties
+        if valid_props:
+            for prop in props:
+                if prop in valid_props:
+                    yield prop
+        else:
+            for prop in props:
+                if not prop.startswith('_'):
+                    yield prop
+
+    def update(self, settings):
+        """Copy properties to container from dict or module. If properties attribute set, only listed properties
+        will be copied. If required_properties attribute set, and after update operation not all of listed properties
+        set, LookupError will be raised.
+
+        :param settings: object, where to look for properties.
+        :type settings: dict or module
+        :return: Settings container instance.
+        :rtype Settings:
+        :raise LookupError:
+        """
+        if isinstance(settings, ModuleType):
+            for prop in self.filter_props(dir(settings)):
+                self._settings[prop] = getattr(settings, prop)
+        elif isinstance(settings, dict):
+            for prop in self.filter_props(settings.keys()):
+                self._settings[prop] = settings[prop]
+        else:
+            raise TypeError('dict or module required.')
+
+        if self.required_properties:
+            unset_but_required = self.required_properties - set(self._settings)
+            if unset_but_required:
+                raise LookupError('Not all of required properties set: {}'.format(unset_but_required))
+        return self
+
+    @property
+    def dict(self):
+        return self._settings
+
+    def dump(self):
+        d = dump_value(self._settings)
+        for prop in d.keys():
+            if prop in self.private_properties:
+                del d[prop]
+        return d
+
+
+class CallbackWrapper(object):
+    """Something similar to functools.partial, but also added a property to mark callback as executed.
+    Note, that if you've provided args to both callback and wrapper, wrapper's args will be added at
+    the end of callback args.
+    """
+
+    def __init__(self, handler, *args, **kwargs):
+        self.done = False
+        self.handler = handler
+        self.args = args
+        self.kwargs = kwargs
+        self._hash = random_id()
+
+    def __call__(self, *args, **kwargs):
+        args = list(args) + list(self.args)
+        kw = copy(self.kwargs)
+        kw.update(kwargs)
+        self.done = True
+        self.handler(*args, **kwargs)
+
+    def __hash__(self):
+        return self._hash
+
+
+def wrap_callback(handler, *args, **kwargs):
+    """Decorate handler with this function to turn function or method to CallbackWrapper
+    """
+    return CallbackWrapper(handler, *args, **kwargs)

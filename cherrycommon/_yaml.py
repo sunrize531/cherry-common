@@ -7,4 +7,4 @@ def dumps(data):
 
 
 def loads(data):
-    return yaml.parse(data)
+    return yaml.load(data)

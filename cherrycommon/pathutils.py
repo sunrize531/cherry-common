@@ -16,7 +16,7 @@ def file_path(file_name, path):
         if os.path.isfile(file_path):
             if file_path.startswith(p):
                 return file_path
-    raise OSError('File not found: {}'.format(file_name))
+    raise OSError('File not found: {}, {}'.format(file_name, path))
 
 
 def get_file_list(path, prefix='.'):

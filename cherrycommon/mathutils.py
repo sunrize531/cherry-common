@@ -21,7 +21,7 @@ def random_id(length=18):
     with _inc_lock:
         source = '{}{}{}'.format(ts, _pid, _inc)
         _inc += 1
-    return hashlib.sha256(source).hexdigest()[0:length]
+    return hash_string(source, length)
 
 
 def unique_id():
@@ -42,6 +42,18 @@ def unique_id():
         )
         _inc += 1
     return source.encode('hex')
+
+
+def hash_string(source, length=18):
+    """Generate truncated to length hexdigest for provided source string.
+
+    :param source: string to computes hash from.
+    :type source: basestring
+    :param length: truncate hash to the specified length.
+    :type length: int
+    :rtype: str
+    """
+    return hashlib.sha256(source).hexdigest()[0:length]
 
 
 class Median(object):

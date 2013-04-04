@@ -536,6 +536,7 @@ class Diffed(MappingView, MutableMapping):
 
 
 JSON = 'json'
+JSONP = 'jsonp'
 AMF = 'amf'
 YAML = 'yaml'
 _supported_data_formats = {}

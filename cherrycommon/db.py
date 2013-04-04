@@ -1,5 +1,7 @@
 from collections import MutableMapping
-from pymongo import Connection
+from pymongo import MongoClient, Connection
+from bson import ObjectId
+from collections import Mapping
 from cherrycommon.dictutils import MappingView, dump_value, Diffed
 from cherrycommon.timeutils import seconds
 
@@ -8,38 +10,54 @@ DEFAULT_PORT = 27017
 DEFAULT_DB_VERSION = 1
 
 
-class DataProvider(object):
-    host = DEFAULT_HOST
-    port = DEFAULT_PORT
-    version = DEFAULT_DB_VERSION
-    _connection = None
+_mongo_clients = {}
 
-    @classmethod
-    def _get_connection(cls):
-        if cls._connection is None:
-            cls._connection = Connection(host=cls.host, port=cls.port)
-        return cls._connection
 
-    @classmethod
-    def _get_collection(cls, db_name, collection_name):
-        db = cls._get_connection()[db_name]
-        return db[collection_name]
+def get_mongo_client(host=DEFAULT_HOST, port=DEFAULT_PORT, **kwargs):
+    """Return (cached) MongoClient instance for provided URL.
+
+    :param host: Host to connect.
+    :type host: basestring
+    :param port: Port to connect.
+    :type port: int
+    :rtype: MongoClient
+    :return: Instance of MongoClient for provided host - port pair.
+    """
+    url = '{}:{}'.format(host, port)
+    try:
+        return _mongo_clients[(host, port)]
+    except KeyError:
+        client = _mongo_clients[(host, port)] = MongoClient(host, port, **kwargs)
+        return client
+
+
+class DataProvider(Mapping):
+    def _get_collection(self, host, port, db, collection):
+        try:
+            return self._collection
+        except AttributeError:
+            self._collection = get_mongo_client(host, port)[db][collection]
+            return self._collection
+
+    @property
+    def collection(self):
+        return self._collection
 
     _global_cache = {}
 
     @classmethod
     def _get_cache(cls, db, collection):
-        collection_id = '{collection}@{db}'.format(db=db, collection=collection)
-        if not cls._global_cache:
-            cls._global_cache = {}
-        return cls._global_cache.setdefault(collection_id, {})
+        return cls._global_cache.setdefault((db, collection), {})
 
     _index_ttl = seconds(hours=1)
 
-    def __init__(self, db, collection, use_cache=True, indexes=None):
+    def __init__(self, db, collection, use_cache=False, indexes=None, host=DEFAULT_HOST, port=DEFAULT_PORT):
         self._db_name = db
         self._collection_name = collection
-        self._collection = self._get_collection(db, collection)
+        self._host = host
+        self._port = port
+        self._collection = self._get_collection(host, port, db, collection)
+
         if indexes is not None:
             for index_name in indexes:
                 self._collection.ensure_index(index_name, ttl=self._index_ttl)
@@ -61,7 +79,6 @@ class DataProvider(object):
             return None
         if include_fields:
             fields = dict.fromkeys(include_fields, 1)
-            fields['_version'] = 1
             return fields
         if exclude_fields:
             return dict.fromkeys(exclude_fields, 0)
@@ -70,7 +87,7 @@ class DataProvider(object):
     def use_cache(self):
         return self._cache is not None
 
-    def get(self, pk, include_fields=None, exclude_fields=None, force_reload=False):
+    def get(self, _id, include_fields=None, exclude_fields=None, force_reload=False):
         """
         Get document from collection by its primary key. 'fields' argument does not matter,
         if DataProvider caches it's data.
@@ -78,15 +95,15 @@ class DataProvider(object):
         fields = self._prepare_fields(include_fields, exclude_fields)
         if self.use_cache and (not force_reload):
             try:
-                return self._cache[pk]
+                return self._cache[_id]
             except KeyError:
                 pass
-        document = self._collection.find_one(pk, fields=fields)
+        document = self._collection.find_one(_id, fields=fields)
         if self.use_cache:
             if document:
-                self._cache[pk] = document
+                self._cache[_id] = document
             else:
-                self._drop_cache_entry(pk)
+                self._drop_cache_entry(_id)
         return document
 
     @staticmethod
@@ -95,8 +112,7 @@ class DataProvider(object):
             yield document['_id'], document
 
     def find(self, *args, **kwargs):
-        """
-        Searches collection for documents, that matches filters. Cache is ignored for this operation.
+        """Searches collection for documents, that matches filters. Cache is ignored for this operation.
         """
         include_fields = kwargs.pop('include_fields', {})
         exclude_fields = kwargs.pop('exclude_fields', {})
@@ -109,49 +125,47 @@ class DataProvider(object):
             return cursor
 
     def find_and_modify(self, *args, **kwargs):
+        """Executes find and modify against the collection.
+        """
         return self._collection.find_and_modify(*args, **kwargs)
 
     def all(self, include_fields=None, exclude_fields=None, keys=False, *args, **kwargs):
-        """
-        Yields documents in collection, one-by-one.
+        """Return cursor with all documents in collection.
+
+        :rtype: Cursor
         """
         return self.find(include_fields=include_fields, exclude_fields=exclude_fields, keys=keys, *args, **kwargs)
 
     def ids(self):
-        """
-        List ids of all documents in collection
+        """List ids of all documents in collection
         """
         return self._collection.distinct('_id')
 
-    def count(self):
-        return self._collection.count()
-
-    def dump_all(self, fields=None):
-        #TODO: used only in obsolete admin. Remove this method.
-        res = {}
-        for o in self.all(fields):
-            res[o["_id"]] = o
-        return res
-
     def save(self, document, safe=False):
+        """Saves document in collection. Creates one, if not exists yet.
         """
-        Saves document to it's collection. Creates one, if not exists yet.
-        """
-        document['_version'] = self.version
         self._collection.save(document, safe=safe)
         if hasattr(document, '_id'):
             self._drop_cache_entry(document['_id'])
 
-    def insert(self, documents, safe=False):
+    def insert(self, documents, **kwargs):
+        """Stores documents into the collection.
+
+        :param documents: document or list of documents to store.
+        """
         if not isinstance(documents, list):
             documents = [documents]
-        for document in documents:
-            document['_version'] = document.get('_version') or self.version
-        self._collection.insert(documents, safe=safe)
+        self._collection.insert(documents, **kwargs)
 
-    def update(self, query, modify, upsert=False):
-        """
-        Updates document in collection according to pymongo update specification.
+    def update(self, query, update, **kwargs):
+        """Updates documents in collection.
+        You can also pass named args, supported by pymongo.Collection.update method.
+        Warning! Update with query will reset all cached documents for this collection.
+
+        :param query: id, list of ids or query for documents to update.
+        :type query: dict or list of basestring or tuple of basestring or basestring or bson.ObjectID
+        :param update: update specification
+        :type update: dict
         """
         #TODO: drop document from cache, if necessary
         if isinstance(query, dict):
@@ -159,10 +173,13 @@ class DataProvider(object):
         elif isinstance(query, (list, set,)):
             multi = True
             query = {'_id': {'$in': query}}
-        else:
-            multi = False
+        elif isinstance(query, basestring):
             query = {'_id': query}
-        self._collection.update(query, modify, safe=True, multi=multi, upsert=upsert)
+            multi = False
+        else:
+            raise TypeError('Invalid query: {}'.format(query))
+        kwargs.setdefault('multi', multi)
+        self._collection.update(query, update, safe=True, **kwargs)
 
     def remove(self, q=None):
         if q is not None:
@@ -174,6 +191,19 @@ class DataProvider(object):
             self._collection.remove()
             if self.use_cache:
                 self._cache.clear()
+
+    # Mapping implementation
+    def __getitem__(self, item):
+        return self.get(item)
+
+    def __len__(self):
+        return self._collection.count()
+
+    def __iter__(self):
+        return self.all()
+
+    def keys(self):
+        return self.ids()
 
 
 class Proxy(MappingView):
@@ -205,9 +235,8 @@ class Proxy(MappingView):
 
     @classmethod
     def get_document(cls, _id):
-        document = cls.get_data_provider().get(_id,
-                                               include_fields=cls.include_fields,
-                                               exclude_fields=cls.exclude_fields)
+        document = cls.get_data_provider().get(
+            _id, include_fields=cls.include_fields, exclude_fields=cls.exclude_fields)
         if not document:
             raise KeyError('Document "{}" not found'.format(_id))
         return cls.get_data_provider().get(_id)
