@@ -248,6 +248,8 @@ class CollectionHandler(AbstractCollectionHandler):
                 getattr(self, 'collection')
             except AttributeError:
                 raise AttributeError('Either set collection name in handler arguments or set it as an attribute')
+        else:
+            self.collection = collection
 
         self.data_provider = DataProvider(db, collection, host=host, port=port)
         self.data_format = data_format
