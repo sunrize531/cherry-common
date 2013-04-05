@@ -296,7 +296,7 @@ class CollectionCRUD(CollectionDumper):
         self.data_provider.save(document)
 
     def put_document(self, document_id, document):
-        self.data_provider.update(document_id, {'$set': document}, True)
+        self.data_provider.update(document_id, {'$set': document}, upsert=True)
 
     def delete_document(self, document_id):
         self.data_provider.remove(document_id)
