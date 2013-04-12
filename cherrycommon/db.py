@@ -229,7 +229,7 @@ class Proxy(MappingView):
 
     @classmethod
     def get_data_provider(cls):
-        if not cls._data_provider:
+        if cls._data_provider is None:
             cls._data_provider = DataProvider(cls.db, cls.collection, cls.use_cache)
         return cls._data_provider
 
