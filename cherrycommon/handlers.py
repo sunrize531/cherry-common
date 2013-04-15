@@ -149,6 +149,10 @@ class DataHandler(RequestHandler):
     # TODO: Documentation
     data_format = AMF
 
+    def initialize(self, data_format=None):
+        if data_format is not None:
+            self.data_format = data_format
+
     def encode_data(self, data):
         return encode_data(data, self.data_format)
 
