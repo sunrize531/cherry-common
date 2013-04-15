@@ -129,6 +129,12 @@ class DataProvider(Mapping):
         """
         return self._collection.find_and_modify(*args, **kwargs)
 
+    def find_one(self, *args, **kwargs):
+        include_fields = kwargs.pop('include_fields', {})
+        exclude_fields = kwargs.pop('exclude_fields', {})
+        kwargs['fields'] = kwargs.get('fields') or self._prepare_fields(include_fields, exclude_fields)
+        return self._collection.find_one(*args, **kwargs)
+
     def all(self, include_fields=None, exclude_fields=None, keys=False, *args, **kwargs):
         """Return cursor with all documents in collection.
 
