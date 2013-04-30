@@ -247,7 +247,7 @@ class Proxy(MappingView):
             _id, include_fields=cls.include_fields, exclude_fields=cls.exclude_fields)
         if not document:
             raise KeyError('Document "{}" not found'.format(_id))
-        return cls.get_data_provider().get(_id)
+        return document
 
     @classmethod
     def all(cls):
