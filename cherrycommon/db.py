@@ -319,3 +319,11 @@ class DiffedProxy(Proxy, MutableMapping):
 
     def __getitem__(self, item):
         return self._data[item]
+
+    def setdefault(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+        return self[key]
+

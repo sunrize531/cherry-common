@@ -153,7 +153,7 @@ class Sheet(object):
                     col_widths[cell_num] = min(max(col_widths.get(cell_num, 10), len(unicode(value))), 54)
 
         for num, width in col_widths.iteritems():
-            ws.col(num).width = width * 256 * 1.2
+            ws.col(num).width = int(width * 256 * 1.2)
 
 
 class Row(object):
