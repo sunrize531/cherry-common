@@ -91,6 +91,11 @@ _process_instance = None
 class BasicProcess(object):
     @classmethod
     def get_instance(cls, *args, **kwargs):
+        """Just singleton implementation.
+
+        :return: Process instance for current application.
+        :rtype: BasicProcess
+        """
         global _process_instance
         if _process_instance is None:
             _process_instance = cls.__new__(cls)
