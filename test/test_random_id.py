@@ -4,6 +4,7 @@ __author__ = 'sunrize'
 
 import unittest
 
+
 class RandomIDTest(unittest.TestCase):
     def test_unique_id(self):
         rid0 = unique_id()
