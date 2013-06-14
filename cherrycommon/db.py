@@ -164,36 +164,36 @@ class DataProvider(Mapping):
             documents = [documents]
         self._collection.insert(documents, **kwargs)
 
-    def update(self, query, update, **kwargs):
+    def update(self, spec, update, **kwargs):
         """Updates documents in collection.
         You can also pass named args, supported by pymongo.Collection.update method.
         Warning! Update with query will reset all cached documents for this collection.
 
-        :param query: id, list of ids or query for documents to update.
-        :type query: dict or list of basestring or tuple of basestring or basestring or bson.ObjectID
+        :param spec: id, list of ids or query for documents to update.
+        :type spec: dict or list of basestring or tuple of basestring or basestring or bson.ObjectID
         :param update: update specification
         :type update: dict
         """
         #TODO: drop document from cache, if necessary
-        if isinstance(query, dict):
+        if isinstance(spec, dict):
             multi = True
-        elif isinstance(query, (list, set,)):
+        elif isinstance(spec, (list, set,)):
             multi = True
-            query = {'_id': {'$in': query}}
-        elif isinstance(query, basestring):
-            query = {'_id': query}
+            spec = {'_id': {'$in': spec}}
+        elif isinstance(spec, basestring):
+            spec = {'_id': spec}
             multi = False
         else:
-            raise TypeError('Invalid query: {}'.format(query))
+            raise TypeError('Invalid query: {}'.format(spec))
         kwargs.setdefault('multi', multi)
-        self._collection.update(query, update, safe=True, **kwargs)
+        self._collection.update(spec, update, safe=True, **kwargs)
 
-    def remove(self, q=None):
-        if q is not None:
-            if isinstance(q, basestring):
-                self._drop_cache_entry(q)
-                q = {'_id': q}
-            self._collection.remove(q)
+    def remove(self, spec=None):
+        if spec is not None:
+            if isinstance(spec, basestring):
+                self._drop_cache_entry(spec)
+                spec = {'_id': spec}
+            self._collection.remove(spec)
         else:
             self._collection.remove()
             if self.use_cache:
