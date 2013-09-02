@@ -9,7 +9,6 @@ DEFAULT_HOST = 'localhost'
 DEFAULT_PORT = 27017
 DEFAULT_DB_VERSION = 1
 
-
 _mongo_clients = {}
 
 
@@ -212,6 +211,68 @@ class DataProvider(Mapping):
 
     def keys(self):
         return self.ids()
+
+
+class PaymentProvider(DataProvider):
+    def get_price_for(self, _id, platform_id=None, include_fields=None, exclude_fields=None, force_reload=False):
+        """Get payment option by id and use platform specific price. If there's no platform specific price for selected
+        option, it will return default ``price``
+
+        :param _id:
+        :param platform_id:
+        :param include_fields:
+        :param exclude_fields:
+        :param force_reload:
+        :return:
+        """
+        option = super(PaymentProvider, self).get(
+            _id,
+            include_fields=include_fields,
+            exclude_fields=exclude_fields,
+            force_reload=force_reload
+        )
+
+        lookup_key = 'price_{}'.format(platform_id or 'default')
+        try:
+            price = option[lookup_key]
+        except KeyError:
+            price = option['price']
+        return price
+
+    def all_by_platform(self, platform_id=None, include_fields=None, exclude_fields=None, keys=False, *args, **kwargs):
+        """Modifies and return existing payment config for selected platform using ``platform_id``.
+
+        This method will override ``price`` field with provided platform specific value, selected
+        from ``price_*platform_id*`` column, but if there's no such column in database it will use default ``price``
+        column and return payment config.
+
+        :param platform_id:
+        :param include_fields:
+        :param exclude_fields:
+        :param keys:
+        :param args:
+        :param kwargs:
+        """
+        products = super(PaymentProvider, self).all(
+            include_fields=include_fields,
+            exclude_fields=exclude_fields,
+            keys=keys,
+            *args,
+            **kwargs)
+
+        lookup_key = 'price_{}'.format(platform_id)
+        products = list(products)
+
+        if keys:
+            for key, config in products:
+                if lookup_key in config:
+                    config['price'] = config[lookup_key]
+        else:
+            for config in products:
+                if lookup_key in config:
+                    config['price'] = config[lookup_key]
+
+        return products
 
 
 class Proxy(MappingView):
