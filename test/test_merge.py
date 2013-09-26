@@ -4,6 +4,7 @@ __author__ = 'sunrize'
 
 import unittest
 
+
 class MergeTest(unittest.TestCase):
     def test_merge(self):
         nested = {
@@ -63,6 +64,16 @@ class MergeTest(unittest.TestCase):
         self.assertIsInstance(merged['str_field'], basestring)
         self.assertIsInstance(merged['numeric_field'], float)
         self.assertIsInstance(merged['new_numeric_field'], basestring)
+
+    def test_keep_none(self):
+        source = {
+            'null_field': None,
+            'empty_field': {},
+            'nested': {'flat': 2},
+        }
+
+        merged = merge(source, {'nested': None}, keep_none=True)
+        self.assertIn('nested', merged)
 
 if __name__ == '__main__':
     unittest.main()
