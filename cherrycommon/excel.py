@@ -23,7 +23,7 @@ def write_cell_value(value):
     if isinstance(value, (float, int, long, unicode, NoneType, Formula)):
         return value
     else:
-        return dumps(value)
+        return dumps(value, sort_keys=True)
 
 
 def read_cell_value(value):
