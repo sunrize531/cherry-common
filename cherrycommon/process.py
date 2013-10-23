@@ -169,7 +169,11 @@ class IOLoopProcess(BasicProcess):
 
     def start(self):
         super(IOLoopProcess, self).start()
-        self.loop.start()
+        try:
+            self.loop.start()
+        except KeyboardInterrupt:
+            self.stop()
+            self.logger.error('Exited via Ctrl-C: {}'.format(self.name))
 
     def stop(self):
         self.loop.stop()
