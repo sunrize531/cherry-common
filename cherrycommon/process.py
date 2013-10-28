@@ -1,4 +1,5 @@
 from copy import copy
+from functools import partial
 import imp
 from logging import getLogger
 from multiprocessing import Process
@@ -314,15 +315,12 @@ class CallbackWrapper(object):
 
     def __init__(self, handler, *args, **kwargs):
         self.done = False
-        self.handler = handler
         self.args = args
         self.kwargs = kwargs
+        self.handler = partial(handler, *args, **kwargs)
         self._hash = random_id()
 
     def __call__(self, *args, **kwargs):
-        args = list(args) + list(self.args)
-        kw = copy(self.kwargs)
-        kw.update(kwargs)
         self.done = True
         self.handler(*args, **kwargs)
 
