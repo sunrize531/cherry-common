@@ -317,12 +317,13 @@ class CallbackWrapper(object):
         self.done = False
         self.args = args
         self.kwargs = kwargs
-        self.handler = partial(handler, *args, **kwargs)
+        self.handler = handler
+        self._callee = partial(handler, *args, **kwargs)
         self._hash = random_id()
 
     def __call__(self, *args, **kwargs):
         self.done = True
-        self.handler(*args, **kwargs)
+        self._callee(*args, **kwargs)
 
     def __hash__(self):
         return self._hash
