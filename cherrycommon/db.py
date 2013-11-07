@@ -1,6 +1,5 @@
 from collections import MutableMapping
 from pymongo import MongoClient, Connection
-from bson import ObjectId
 from collections import Mapping
 from cherrycommon.dictutils import MappingView, dump_value, Diffed
 from cherrycommon.timeutils import seconds

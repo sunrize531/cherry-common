@@ -1,13 +1,9 @@
 from json import dumps, loads
 from types import NoneType
 from cherrycommon.dictutils import flatten_value
-
-__author__ = 'sunrize'
-
 from xlwt import Formula
 from xlwt.Style import easyxf
 from xlwt.Workbook import Workbook as WtWorkbook
-
 from xlrd import open_workbook
 
 

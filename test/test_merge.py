@@ -1,7 +1,4 @@
 from cherrycommon.dictutils import merge, DictView
-
-__author__ = 'sunrize'
-
 import unittest
 
 
