@@ -12,8 +12,7 @@ setup(
     install_requires=[
         "tornado >= 2.4",
         "pymongo >= 2.3",
-        "xlwt",
-        "xlrd",
+        "openpyxl",
         "python-daemon"
     ],
     extras_require={
