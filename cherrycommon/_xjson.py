@@ -8,4 +8,4 @@ def dumps(s):
 
 
 def loads(s):
-    return decompress(_loads(s))
+    return _loads(decompress(s))

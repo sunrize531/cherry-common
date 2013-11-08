@@ -565,6 +565,9 @@ def check_data_format(data_format=JSON):
     if data_format == JSON:
         import json
         _module = _supported_data_formats[JSON] = json
+    elif data_format == XJSON:
+        import cherrycommon._xjson
+        _module = _supported_data_formats[XJSON] = cherrycommon._xjson
     elif data_format == AMF:
         try:
             import cherrycommon._amf
