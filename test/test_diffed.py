@@ -1,9 +1,6 @@
-from copy import copy
 from cherrycommon.dictutils import Diffed, DictView, ListView, dump_value
-
-__author__ = 'sunrize'
-
 import unittest
+
 
 class DiffedCase(unittest.TestCase):
     def test_simple_get(self):

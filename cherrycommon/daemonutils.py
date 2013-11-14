@@ -6,8 +6,6 @@ import sys
 import os
 import signal
 
-__author__ = 'sunrize'
-
 
 def start_daemon(pidfile, process, stdout=None, stderr=None, **kwargs):
     if pidfile:

@@ -1,8 +1,6 @@
 from cherrycommon.excel import XLS
-
-__author__ = 'sunrize'
-
 import unittest
+
 
 class ExcelTest(unittest.TestCase):
     def test_cell_names(self):

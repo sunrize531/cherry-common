@@ -1,7 +1,4 @@
 from cherrycommon.dictutils import get_schema
-
-__author__ = 'sunrize'
-
 import unittest
 
 

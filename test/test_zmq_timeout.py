@@ -1,8 +1,5 @@
 from cherrycommon.timeutils import milliseconds, get_timeout
 from zmq.eventloop import IOLoop
-
-__author__ = 'sunrize'
-
 import unittest
 
 

@@ -1,26 +1,27 @@
 from json import dumps, loads
-from types import NoneType
 from cherrycommon.dictutils import flatten_value
-
-__author__ = 'sunrize'
-
-from xlwt import Formula
-from xlwt.Style import easyxf
-from xlwt.Workbook import Workbook as WtWorkbook
-
-from xlrd import open_workbook
+from openpyxl.workbook import Workbook as _Workbook
+from openpyxl import style
+from openpyxl import load_workbook
 
 
 HEADER = 'header'
 CELL = 'cell'
 
-_CELL_FORMAT = 'font: name courier;'
-_HEADER_FORMAT = 'font: name courier; pattern: pattern solid, fore_color light_yellow; protection: cell_locked on;'
+_CELL_FORMAT = style.Style()
+_CELL_FORMAT.font.name = 'courier'
+
+_HEADER_FORMAT = style.Style()
+_HEADER_FORMAT.font.name = 'courier'
+_HEADER_FORMAT.font.bold = True
+_HEADER_FORMAT.fill.fill_type = style.Fill.FILL_PATTERN_LIGHTGRAY
+_HEADER_FORMAT.fill.start_color = style.Color.YELLOW
+_HEADER_FORMAT.protection.locked = style.Protection.PROTECTION_PROTECTED
 
 
 def write_cell_value(value):
     value = flatten_value(value)
-    if isinstance(value, (float, int, long, unicode, NoneType, Formula)):
+    if isinstance(value, (float, int, long, unicode)) or value is None:
         return value
     else:
         return dumps(value, sort_keys=True)
@@ -85,26 +86,28 @@ class XLS(object):
             raise KeyError('Sheet with name "{}" not found.'.format(name))
 
     def write(self, stream):
-        wb = WtWorkbook()
+        wb = _Workbook()
         for sheet in self._sheets:
             sheet.write(wb)
         wb.save(stream)
 
     def read(self, content):
-        wb = open_workbook(file_contents=content, formatting_info=True)
-        xf_list = wb.xf_list
-        for s in wb.sheets():
-            sheet = self.add_sheet(s.name)
-            for r in range(0, s.nrows):
-                sheet_row = s.row(r)
-                if sheet_row:
-                    row_style = xf_list[sheet_row[0].xf_index]
-                    pattern = row_style.background.fill_pattern
-                    if pattern:
-                        style = HEADER
-                    else:
-                        style = CELL
-                    sheet.add_row(map(lambda cell: read_cell_value(cell.value), sheet_row), style)
+        wb = load_workbook(content)
+        for sheet_name in wb.get_sheet_names():
+            sheet = self.add_sheet(sheet_name)
+            wb_sheet = wb.get_sheet_by_name(sheet_name)
+            rows = xrange(wb_sheet.get_highest_row())
+            cols = xrange(wb_sheet.get_hightes_col())
+            for r in rows:
+                row_style = CELL
+                row_cells = []
+                for c in cols:
+                    cell = wb_sheet.cell(row=r, col=c)
+                    row_cells.append(cell)
+                    cell_style = cell.style
+                    if row_style == CELL and cell_style.fill.fill_type == style.Fill.FILL_PATTERN_LIGHTGRAY:
+                        row_style = HEADER
+                sheet.add_row(row_cells, row_style)
 
 
 class Sheet(object):
@@ -131,29 +134,34 @@ class Sheet(object):
             pass
 
         if style == CELL:
-            _xf_style = easyxf(_CELL_FORMAT)
-            cls._styles[CELL] = _xf_style
+            _style = cls._styles[CELL] = _CELL_FORMAT
         elif style == HEADER:
-            _xf_style = easyxf(_HEADER_FORMAT)
-            cls._styles[HEADER] = _xf_style
+            _style = cls._styles[HEADER] = _HEADER_FORMAT
         else:
             raise ValueError('Allowed styles are "head", "cell". Got {}.'.format(style))
+        return _style
 
-        return _xf_style
+    def write(self, workbook, worksheet=None):
+        """ Write data onto workbook. If no worksheet specified, than currently active worksheet used.
+        Warning! If all data in worksheet will be erased.
 
-    def write(self, wb):
-        ws = wb.add_sheet(self.name)
+        :param workbook: Workbook instance.
+        :param worksheet: Optional worksheet instance.
+        """
+        if worksheet is None:
+            worksheet = workbook.get_active_sheet()
+            worksheet.title = self.name
+
         col_widths = {}
         for row_num, row in enumerate(self.rows):
             style = self.get_style(row.style)
             for cell_num, value in enumerate(row.cells):
                 value = write_cell_value(value)
-                ws.write(row_num, cell_num, value, style)
-                if not isinstance(value, Formula):
-                    col_widths[cell_num] = min(max(col_widths.get(cell_num, 10), len(unicode(value))), 54)
+                worksheet.write(row_num, cell_num, value, style)
+                col_widths[cell_num] = min(max(col_widths.get(cell_num, 10), len(unicode(value))), 54)
 
         for num, width in col_widths.iteritems():
-            ws.col(num).width = int(width * 256 * 1.2)
+            worksheet.col(num).width = int(width * 256 * 1.2)
 
 
 class Row(object):

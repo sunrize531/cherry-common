@@ -1,4 +1,5 @@
 from copy import copy
+from functools import partial
 import imp
 from logging import getLogger
 from multiprocessing import Process
@@ -169,7 +170,11 @@ class IOLoopProcess(BasicProcess):
 
     def start(self):
         super(IOLoopProcess, self).start()
-        self.loop.start()
+        try:
+            self.loop.start()
+        except KeyboardInterrupt:
+            self.stop()
+            self.logger.error('Exited via Ctrl-C: {}'.format(self.name))
 
     def stop(self):
         self.loop.stop()
@@ -310,17 +315,15 @@ class CallbackWrapper(object):
 
     def __init__(self, handler, *args, **kwargs):
         self.done = False
-        self.handler = handler
         self.args = args
         self.kwargs = kwargs
+        self.handler = handler
+        self._callee = partial(handler, *args, **kwargs)
         self._hash = random_id()
 
     def __call__(self, *args, **kwargs):
-        args = list(args) + list(self.args)
-        kw = copy(self.kwargs)
-        kw.update(kwargs)
         self.done = True
-        self.handler(*args, **kwargs)
+        self._callee(*args, **kwargs)
 
     def __hash__(self):
         return self._hash

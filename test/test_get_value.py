@@ -1,8 +1,6 @@
 from cherrycommon.dictutils import get_value, set_value
-
-__author__ = 'sunrize'
-
 import unittest
+
 
 class TestGetValue(unittest.TestCase):
     def test_dict_access(self):
@@ -17,7 +15,6 @@ class TestGetValue(unittest.TestCase):
 
         self.assertEqual(get_value(document, 'int_field'), 1)
         self.assertEqual(get_value(document, 'nested_field.int_field'), 1)
-
 
     def test_list_access(self):
         document = {

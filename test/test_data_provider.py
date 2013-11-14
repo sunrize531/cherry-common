@@ -1,7 +1,4 @@
 from cherrycommon.db import DataProvider
-
-__author__ = 'sunrize'
-
 import unittest
 
 

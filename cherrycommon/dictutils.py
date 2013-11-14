@@ -537,12 +537,15 @@ class Diffed(MappingView, MutableMapping):
 
 JSON = 'json'
 JSONP = 'jsonp'
+XJSON = 'x-json'
 AMF = 'amf'
 YAML = 'yaml'
+
 _supported_data_formats = {}
 
 content_types = {
     JSON: 'application/json',
+    XJSON: 'application/x-json',
     AMF: 'application/x-amf',
     YAML: 'application/yaml'
 }
@@ -562,6 +565,9 @@ def check_data_format(data_format=JSON):
     if data_format == JSON:
         import json
         _module = _supported_data_formats[JSON] = json
+    elif data_format == XJSON:
+        import cherrycommon._xjson
+        _module = _supported_data_formats[XJSON] = cherrycommon._xjson
     elif data_format == AMF:
         try:
             import cherrycommon._amf

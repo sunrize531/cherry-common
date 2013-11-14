@@ -1,7 +1,4 @@
 from cherrycommon.mathutils import random_id, unique_id
-
-__author__ = 'sunrize'
-
 import unittest
 
 
