@@ -482,7 +482,7 @@ class Diffed(MappingView, MutableMapping):
         if diff is None:
             diff = {}
             self._diffs[-1] = diff
-        if isinstance(value, (NoneType, int, long, float, str, unicode, list, tuple, dict, DictView)):
+        if isinstance(value, (NoneType, int, long, float, str, unicode, list, set, tuple, dict, DictView)):
             diff[item] = value
         else:
             raise ValueError('Type not supported: {value_type}'.format(value_type=type(value)))
