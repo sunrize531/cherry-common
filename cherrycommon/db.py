@@ -236,6 +236,8 @@ class PaymentProvider(DataProvider):
             price = option[lookup_key]
         except KeyError:
             price = option['price']
+        if price == 0:
+            price = option['price']
         return price
 
     def all_by_platform(self, platform_id=None, include_fields=None, exclude_fields=None, keys=False, *args, **kwargs):
@@ -264,11 +266,11 @@ class PaymentProvider(DataProvider):
 
         if keys:
             for key, config in products:
-                if lookup_key in config:
+                if lookup_key in config and not config[lookup_key] == 0:
                     config['price'] = config[lookup_key]
         else:
             for config in products:
-                if lookup_key in config:
+                if lookup_key in config and not config[lookup_key] == 0:
                     config['price'] = config[lookup_key]
 
         return products
